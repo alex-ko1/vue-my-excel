@@ -196,26 +196,102 @@ export default defineComponent({
       let startSelectedY = e.pageY;
 
       const mouseMove = (event: Event) => {
-        let selectedCells = event.pageX - startSelectedX;
+        let selectedCellsX = event.pageX - startSelectedX;
+        let selectedCellsY = event.pageY - startSelectedY;
+        let absSelectedCellsX = Math.abs(selectedCellsX);
+        let absSelectedCellsY = Math.abs(selectedCellsY);
         let i = 1;
-        const recurtion = () => {
+
+        const checkSelectedCells = () => {
           //   if (this.colActive + i + 1 == this.cols) {
           //     this.arrCells[this.rowActive][this.colActive + i].selected = true;
-          //     selectedCells -= this.tHead[this.colActive + i].width;
+          //     selectedCellsX -= this.tHead[this.colActive + i].width;
           //     return;
           //   }
-          if (
-            this.colActive + i + 1 <= this.cols &&
-            selectedCells - this.tHead[this.colActive + i].width > 0
-          ) {
-            this.arrCells[this.rowActive][this.colActive + i].selected = true;
-            selectedCells -= this.tHead[this.colActive + i].width;
+          if (absSelectedCellsX >= absSelectedCellsY) {
+            this.arrCells.forEach((row) => {
+              if (row[this.colActive].selected) {
+                row[this.colActive].selected = false;
+              }
+            });
+            if (this.colActive + i < this.cols && this.colActive + i > 0) {
+              if (selectedCellsX < 0) {
+                if (
+                  Math.abs(selectedCellsX) -
+                    this.tHead[this.colActive + i - 1].width >
+                  0
+                ) {
+                  this.arrCells[this.rowActive][
+                    this.colActive + i - 1
+                  ].selected = true;
+                  selectedCellsX += this.tHead[this.colActive + i - 1].width;
+                  i--;
+                  checkSelectedCells();
+                } else {
+                  this.arrCells[this.rowActive][
+                    this.colActive + i - 1
+                  ].selected = false;
+                  selectedCellsX -= this.tHead[this.colActive + i - 1].width;
+                  i++;
+                }
+              } else if (
+                selectedCellsX - this.tHead[this.colActive + i].width >
+                0
+              ) {
+                this.arrCells[this.rowActive][this.colActive + i].selected =
+                  true;
+                selectedCellsX -= this.tHead[this.colActive + i].width;
+                i++;
+                checkSelectedCells();
+              } else {
+                this.arrCells[this.rowActive][this.colActive + i].selected =
+                  false;
+                selectedCellsX += this.tHead[this.colActive + i].width;
+                i--;
+              }
+            }
+          } else {
+            this.arrCells[this.rowActive].find((cell) => {
+              cell.selected = false;
+            });
 
-            i++;
-            recurtion();
+            if (this.rowActive + i < this.rows && this.rowActive + i > 0) {
+              if (selectedCellsY < 0) {
+                if (
+                  Math.abs(selectedCellsY) >
+                  this.rowsHeight[this.rowActive + i - 1]
+                ) {
+                  this.arrCells[this.rowActive + i - 1][
+                    this.colActive
+                  ].selected = true;
+                  selectedCellsY += this.rowsHeight[this.rowActive + i - 1];
+                  i--;
+                  checkSelectedCells();
+                } else {
+                  this.arrCells[this.rowActive + i - 1][
+                    this.colActive
+                  ].selected = false;
+                  selectedCellsY -= this.rowsHeight[this.rowActive + i - 1];
+                  i++;
+                }
+              } else {
+                if (selectedCellsY > this.rowsHeight[this.rowActive + i]) {
+                  this.arrCells[this.rowActive + i][this.colActive].selected =
+                    true;
+                  selectedCellsY -= this.rowsHeight[this.rowActive + i];
+                  i++;
+                  checkSelectedCells();
+                } else {
+                  this.arrCells[this.rowActive + i][this.colActive].selected =
+                    false;
+                  selectedCellsY += this.rowsHeight[this.rowActive + i];
+                  i--;
+                }
+              }
+            }
           }
         };
-        recurtion();
+        checkSelectedCells();
       };
       document.addEventListener("mousemove", mouseMove);
 
@@ -223,33 +299,47 @@ export default defineComponent({
         document.removeEventListener("mousemove", mouseMove);
         document.onmouseup = null;
 
-        let selectedCells = event.pageX - startSelectedX;
-        let i = 1;
-        const recurtion = () => {
-          if (
-            this.colActive + i + 1 <= this.cols &&
-            selectedCells - this.tHead[this.colActive + i].width > 0
-          ) {
-            // Копіювання тексту до останньо комірки
-            if (this.colActive + i + 1 == this.cols) {
-              this.arrCells[this.rowActive][this.colActive + i].content =
-                this.arrCells[this.rowActive][this.colActive].content;
-              this.arrCells[this.rowActive][this.colActive + i].selected =
-                false;
-              return;
-            }
-            this.arrCells[this.rowActive][this.colActive + i].content =
+        // let selectedCells = event.pageX - startSelectedX;
+        // let i = 1;
+        this.arrCells[this.rowActive].find((cell) => {
+          if (cell.selected) {
+            cell.content =
               this.arrCells[this.rowActive][this.colActive].content;
-            this.arrCells[this.rowActive][this.colActive + i].selected = false;
-
-            selectedCells -= this.tHead[this.colActive + i].width;
-            i++;
-            recurtion();
-          } else {
-            return;
+            cell.selected = false;
           }
-        };
-        recurtion();
+        });
+        this.arrCells.forEach((row) => {
+          if (row[this.colActive].selected) {
+            row[this.colActive].content =
+              this.arrCells[this.rowActive][this.colActive].content;
+            row[this.colActive].selected = false;
+          }
+        });
+        // const duplicateContent = () => {
+        //   if (
+        //     this.colActive + i + 1 <= this.cols &&
+        //     selectedCells - this.tHead[this.colActive + i].width > 0
+        //   ) {
+        //     // Копіювання тексту до останньо комірки
+        //     if (this.colActive + i + 1 == this.cols) {
+        //       this.arrCells[this.rowActive][this.colActive + i].content =
+        //         this.arrCells[this.rowActive][this.colActive].content;
+        //       this.arrCells[this.rowActive][this.colActive + i].selected =
+        //         false;
+        //       return;
+        //     }
+        //     this.arrCells[this.rowActive][this.colActive + i].content =
+        //       this.arrCells[this.rowActive][this.colActive].content;
+        //     this.arrCells[this.rowActive][this.colActive + i].selected = false;
+
+        //     selectedCells -= this.tHead[this.colActive + i].width;
+        //     i++;
+        //     duplicateContent();
+        //   } else {
+        //     return;
+        //   }
+        // };
+        // duplicateContent();
       };
       e.target.ondragstart = function () {
         return false;
@@ -391,7 +481,7 @@ table {
         outline: 2px solid #008200;
       }
       &.selected {
-        outline: 2px solid #01bd0179;
+        outline: 2px solid #007e00a5;
       }
       //   vertical-align: bottom;
       &:first-child {

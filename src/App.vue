@@ -30,8 +30,8 @@ export default defineComponent({
   components: { MyTable, MyExcel },
   data() {
     return {
-      cols: 30,
-      rows: 30,
+      cols: 20,
+      rows: 25,
     };
   },
 });
