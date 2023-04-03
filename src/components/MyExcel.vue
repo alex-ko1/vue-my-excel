@@ -7,7 +7,7 @@
         name=""
         id=""
         :value="arrCells[rowActive][colActive].content"
-        @input="arrCells[rowActive][colActive].content = $event.target.value"
+        @input="arrCells[rowActive][colActive].content = ($event.target as HTMLInputElement)!.value"
       />
     </div>
   </div>
@@ -53,7 +53,7 @@
           <div
             class="cell-content"
             :contenteditable="col.editable"
-            @input="col.content = $event.target.textContent"
+            @input="col.content =($event.target as HTMLElement).textContent ?? '' "
           >
             {{ col.content }}
           </div>
