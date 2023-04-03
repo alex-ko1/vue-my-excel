@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "vite",
-    "build": "run-p build-only",
+    "build": "run-p type-check build-only",
+    "type-check": "vue-tsc --noEmit",
     "preview": "vite preview",
     "build-only": "vite build"
   },
