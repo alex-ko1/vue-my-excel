@@ -42,9 +42,9 @@
                 <td
                     v-for="(col, colInd) in arrCells[rowInd]"
                     :key="colInd"
-                    :class="{ active: col.active, selected: col.selected,selectionDark : isSelected(rowInd,colInd) }"
+                    :class="{ active: col.active, selected: col.selected, selectionDark : isSelected(rowInd,colInd) }"
                     @mousedown="activeCell(col, $event)"
-                    @mouseover="isStartOver && onMouseOver(rowInd,colInd,$event)"
+                    @mouseover="isStartOver && onMouseOver(rowInd,colInd)"
                     @mouseup="onMouseUp"
                     @keypress.enter.prevent="onNextCell(col)"
                     @keyup.down.prevent="onNextCell(col)"
@@ -67,7 +67,6 @@
                     <span class="duplicate-selection"
                           v-if="duplicateSelection && rowInd == bottomRightCell[0] && colInd == bottomRightCell[1]"
                           @mousedown="duplicateSelectCells"
-                          @mouseover="duplicateSelectMove && onDuplicateSelectMove($event)"
                           @mouseup="duplicateSelectMove = false"
                     ></span>
                 </td>
@@ -89,6 +88,7 @@ interface Cell {
     active: boolean,
     selected: boolean,
     editable: boolean,
+    selectCell: boolean,
     width: number,
     row: number,
     col: number,
@@ -137,6 +137,7 @@ const onCreated = () => {
                 active: false,
                 selected: false,
                 editable: false,
+                selectCell : false,
                 width: 100,
                 row: i,
                 col: j,
@@ -167,14 +168,10 @@ const headerLetter = computed(() => {
     return tHead.value;
 })
 const duplicateSelection = computed(()=>{
-    if (selection.startRow == selection.endRow && selection.startCol == selection.endCol) {
-        return false
-    } else return true;
+    return !(selection.startRow == selection.endRow && selection.startCol == selection.endCol);
     // return rowActive.value !== selection.endRow || colActive.value !== selection.endCol
 });
-const isDuplicateSquare = computed(()=>{
-   return rowActive.value == selection.endRow && colActive.value == selection.endCol
-});
+
 const activeCell = (cell: Cell, e: Event) => {
     let cellActive;
     for (let i = 0; i < arrCells.value.length; i++) {
@@ -400,13 +397,7 @@ const duplicateContent = (e: Event) => {
     //     return false;
     // };
 };
-const selectCells = (rowInd: number, colInd: number) => {
-    selection.startRow = rowInd;
-    selection.endRow = rowInd;
-    selection.startCol = colInd;
-    selection.endCol = colInd;
-}
-const onMouseOver = (rowInd: number, colInd: number, event: Event) => {
+const onMouseOver = (rowInd: number, colInd: number) => {
     if (selection.startRow === null || selection.startCol===null) {
         return
     }
@@ -570,10 +561,26 @@ const duplicateSelectCells = (e:Event) =>{
         let r = 0;
         let col = 0;
         let isStartDuplicate = false;
-        arrCells.value.forEach((row) => {
+
+        let lastValue: number, startValue: number, step: number;
+        // if ((Number(selectedCellsValue[0][0]) ?? Number(selectedCellsValue[0][1])) && startRow === endRow && endCol - startCol === 1) {
+        //     lastValue = Number(selectedCellsValue[0][1]);
+        //     step = Number(selectedCellsValue[0][1]) - Number(selectedCellsValue[0][0]);
+        // }
+        if (endCol - startCol <= 1 && endRow - startRow <= 1){
+            let numericalSeries:string[] = [];
+            selectedCellsValue.forEach(i=>{
+                i.forEach(j=>{
+                    numericalSeries.push(j);
+                })
+            })
+            lastValue = Number(numericalSeries[1])
+            step = lastValue - Number(numericalSeries[0]);
+        }
+        arrCells.value.forEach((row,rowIndex) => {
             r = isStartDuplicate ? r + 1 : 0;
             col = 0;
-            row.forEach(cell=>{
+            row.forEach((cell,colIndex)=>{
                 if (cell.selected) {
                     if (endCol - startCol + 1 <= col) {
                         col = 0
@@ -584,17 +591,30 @@ const duplicateSelectCells = (e:Event) =>{
                     cell.content = selectedCellsValue[r][col];
                     col++;
                     cell.selected = false;
-                    isStartDuplicate = true
+                    isStartDuplicate = true;
+                    if (lastValue && step && colIndex != endCol && colIndex != startCol && startRow === endRow) {
+                        if (colIndex > endCol) {
+                            cell.content = String(lastValue + step);
+                            lastValue += step;
+                        } else {
+                            cell.content = String(lastValue - step * (startCol - colIndex + 1));
+                        }
+                    } else if (lastValue && step && rowIndex != endRow && rowIndex != startRow && startCol === endCol) {
+                        if (rowIndex > endRow) {
+                            cell.content = String(lastValue + step);
+                            lastValue += step;
+                        } else {
+                            cell.content = String(lastValue - step * (startRow - rowIndex + 1));
+                        }
+                    }
                 }
             });
 
         });
+        // selectedCellsValue.forEach(row=>{
+        //     row.every(value=>typeof value == "number")
+        // })
     };
-}
-const onDuplicateSelectMove = (e:Event)=>{
-
-
-
 }
 
 </script>
@@ -683,6 +703,13 @@ table {
 
       &.selected {
         outline: 2px solid #007e00a5;
+        //  div:first-child{
+        //      box-sizing: border-box;
+        //      border-bottom: 2px solid #007e00a5;
+        //      border-top: 2px solid #007e00a5;
+        //      border-left: 1px solid #007e00a5;
+        //      border-right: 1px solid #007e00a5;
+        //  }
       }
 
       //   vertical-align: bottom;
