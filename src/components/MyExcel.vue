@@ -20,7 +20,7 @@
                 <th
                     v-for="(col, i) in cols"
                     :key="i"
-                    :class="{ 'col-active': i == colActive }"
+                    :class="{ 'col-active': i === colActive }"
                     :style="{width: tHead[i]?.width + 'px', maxWidth: tHead[i]?.width + 'px',}"
                 >
                     {{ tHead[i]?.name }}
@@ -28,7 +28,7 @@
                 </th>
             </tr>
             <tr v-for="(row, rowInd) in arrCells" :key="rowInd" ref="refRows">
-                <td :class="{ 'row-active': rowInd == rowActive }" :style="{ height: rowsHeight[rowInd] + 'px' }"
+                <td :class="{ 'row-active': rowInd === rowActive }" :style="{ height: rowsHeight[rowInd] + 'px' }"
                 >
                     {{ rowInd + 1 }}
                     <span class="row-resize" @mousedown="rowResize(rowInd, $event)"></span>
@@ -56,10 +56,10 @@
                     <span
                         class="select-cells"
                         @mousedown="duplicateContent"
-                        v-if="rowActive == rowInd && colActive == colInd && !duplicateSelection"
+                        v-if="rowActive === rowInd && colActive === colInd && !duplicateSelection"
                     ></span>
                     <span class="duplicate-selection"
-                          v-if="duplicateSelection && rowInd == bottomRightCell[0] && colInd == bottomRightCell[1]"
+                          v-if="duplicateSelection && rowInd === bottomRightCell[0] && colInd === bottomRightCell[1]"
                           @mousedown="duplicateSelectCells"
                           @mouseup="duplicateSelectMove = false"
                     ></span>
@@ -166,22 +166,21 @@ const headerLetter = computed(() => {
         if (i < 26) {
             tHead.value.push({name: letterArr[i], width: 100});
         } else {
-            const colLetter =
-                letterArr[Math.floor(i / 26) - 1] + letterArr[i % 26];
+            const colLetter = letterArr[Math.floor(i / 26) - 1] + letterArr[i % 26];
             tHead.value.push({name: colLetter, width: 100});
         }
     }
     return tHead.value;
 })
 const duplicateSelection = computed(()=>{
-    return !(selection.startRow == selection.endRow && selection.startCol == selection.endCol);
-    // return rowActive.value !== selection.endRow || colActive.value !== selection.endCol
+    return !(selection.startRow === selection.endRow && selection.startCol === selection.endCol);
+    // return rowActive.value !=== selection.endRow || colActive.value !=== selection.endCol
 });
 
 const activeCell = (cell: Cell, e: Event) => {
     let cellActive;
     for (let i = 0; i < arrCells.value.length; i++) {
-        cellActive = arrCells.value[i].find((el) => el.active == true);
+        cellActive = arrCells.value[i].find((el) => el.active === true);
         if (cellActive) {
             cellActive.active = false;
             cellActive.editable = false;
@@ -209,12 +208,16 @@ const activeCell = (cell: Cell, e: Event) => {
 }
 const parseExpression = (cell: Cell) => {
     function parse(str: string) {
-        return Function(`'use strict'; return (${str})`)()
+        try {
+            return Function(`'use strict'; return (${str})`)()
+        }catch (e){
+            return NaN;
+        }
     }
 
     let mathExpression = arrCells.value[oldCellPosition.row][oldCellPosition.col].content;
 
-    if (mathExpression[0] == "=") {
+    if (mathExpression[0] === "=") {
         arrCells.value[oldCellPosition.row][oldCellPosition.col].mathExp = mathExpression;
         mathExpression = mathExpression.slice(1);
         arrCells.value[oldCellPosition.row][oldCellPosition.col].content = parse(mathExpression);
@@ -232,7 +235,7 @@ const changeContent = (col:Cell,event:Event)=>{
 const changeInput = (event:Event) => {
 
     arrCells.value[rowActive.value][colActive.value].content = (event.target as HTMLInputElement)!.value
-    if (arrCells.value[rowActive.value][colActive.value].mathExp[0] == "="){
+    if (arrCells.value[rowActive.value][colActive.value].mathExp[0] === "="){
         arrCells.value[rowActive.value][colActive.value].mathExp = (event.target as HTMLInputElement)!.value
     }else {
         arrCells.value[rowActive.value][colActive.value].mathExp = ""
@@ -345,7 +348,7 @@ const duplicateContent = (e: Event) => {
         let absSelectedCellsY = Math.abs(selectedCellsY);
         let i = 1;
         const checkSelectedCells = () => {
-            //   if (this.colActive + i + 1 == this.cols) {
+            //   if (this.colActive + i + 1 === this.cols) {
             //     this.arrCells[this.rowActive][this.colActive + i].selected = true;
             //     selectedCellsX -= this.tHead[this.colActive + i].width;
             //     return;
@@ -440,7 +443,7 @@ const duplicateContent = (e: Event) => {
     // };
 };
 const onMouseOver = (rowInd: number, colInd: number) => {
-    if (selection.startRow === null || selection.startCol===null) {
+    if (selection.startRow === null || selection.startCol === null) {
         return
     }
     selection.endRow = rowInd;
@@ -654,7 +657,7 @@ const duplicateSelectCells = (e:Event) =>{
 
         });
         // selectedCellsValue.forEach(row=>{
-        //     row.every(value=>typeof value == "number")
+        //     row.every(value=>typeof value === "number")
         // })
     };
 }
