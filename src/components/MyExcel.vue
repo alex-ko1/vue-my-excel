@@ -1,4 +1,5 @@
 <template>
+<!--    <table-header :arr-cells="arrCells" :header-letter="headerLetter" :col-active="colActive" :row-active="rowActive" />-->
     <div class="header">
         <div class="cellName">{{ headerLetter[colActive].name }}{{ rowActive + 1 }}</div>
         <div class="input">
@@ -6,8 +7,9 @@
                 type="text"
                 name=""
                 id=""
-                :value="arrCells[rowActive][colActive].content"
-                @input="arrCells[rowActive][colActive].content = ($event.target as HTMLInputElement)!.value"
+                :value="arrCells[rowActive][colActive].mathExp ? arrCells[rowActive][colActive].mathExp : arrCells[rowActive][colActive].content"
+                @input="changeInput"
+                @keyup.enter="onNextCell(arrCells[rowActive][colActive])"
             />
         </div>
     </div>
@@ -19,25 +21,17 @@
                     v-for="(col, i) in cols"
                     :key="i"
                     :class="{ 'col-active': i == colActive }"
-                    :style="{
-            width: tHead[i]?.width + 'px',
-            maxWidth: tHead[i]?.width + 'px',
-          }"
+                    :style="{width: tHead[i]?.width + 'px', maxWidth: tHead[i]?.width + 'px',}"
                 >
                     {{ tHead[i]?.name }}
                     <span class="col-resize" @mousedown="colResize(i, $event)"></span>
                 </th>
             </tr>
             <tr v-for="(row, rowInd) in arrCells" :key="rowInd" ref="refRows">
-                <td
-                    :class="{ 'row-active': rowInd == rowActive }"
-                    :style="{ height: rowsHeight[rowInd] + 'px' }"
+                <td :class="{ 'row-active': rowInd == rowActive }" :style="{ height: rowsHeight[rowInd] + 'px' }"
                 >
                     {{ rowInd + 1 }}
-                    <span
-                        class="row-resize"
-                        @mousedown="rowResize(rowInd, $event)"
-                    ></span>
+                    <span class="row-resize" @mousedown="rowResize(rowInd, $event)"></span>
                 </td>
                 <td
                     v-for="(col, colInd) in arrCells[rowInd]"
@@ -77,6 +71,7 @@
 
 <script setup lang="ts">
 import {computed, nextTick, reactive, ref} from "vue"
+import TableHeader from "@/components/TableHeader.vue";
 
 const props = defineProps({
     cols: {type: Number, default: 26},
@@ -92,6 +87,7 @@ interface Cell {
     width: number,
     row: number,
     col: number,
+    mathExp:string,
 }
 
 interface Selection {
@@ -101,6 +97,15 @@ interface Selection {
     endCol: number | null,
 }
 
+interface oldCellPosition {
+    col: number,
+    row: number
+}
+
+const oldCellPosition: oldCellPosition = {
+    col: 0,
+    row: 0,
+}
 
 const arrCells = ref<Cell[][]>([]),
     tHead = ref<{ name: string, width: number }[]>([]),
@@ -141,6 +146,7 @@ const onCreated = () => {
                 width: 100,
                 row: i,
                 col: j,
+                mathExp: ""
             });
         }
     }
@@ -198,6 +204,40 @@ const activeCell = (cell: Cell, e: Event) => {
         (e.target as HTMLElement).focus();
     };
     focusOnCell()
+    parseExpression(cell)
+
+}
+const parseExpression = (cell: Cell) => {
+    function parse(str: string) {
+        return Function(`'use strict'; return (${str})`)()
+    }
+
+    let mathExpression = arrCells.value[oldCellPosition.row][oldCellPosition.col].content;
+
+    if (mathExpression[0] == "=") {
+        arrCells.value[oldCellPosition.row][oldCellPosition.col].mathExp = mathExpression;
+        mathExpression = mathExpression.slice(1);
+        arrCells.value[oldCellPosition.row][oldCellPosition.col].content = parse(mathExpression);
+    }
+    oldCellPosition.row = cell.row;
+    oldCellPosition.col = cell.col;
+
+}
+const changeContent = (col:Cell,event:Event)=>{
+    col.content = (event.target as HTMLElement).textContent ?? ''
+    if (col.content !== "="){
+        col.mathExp = col.content
+    }
+}
+const changeInput = (event:Event) => {
+
+    arrCells.value[rowActive.value][colActive.value].content = (event.target as HTMLInputElement)!.value
+    if (arrCells.value[rowActive.value][colActive.value].mathExp[0] == "="){
+        arrCells.value[rowActive.value][colActive.value].mathExp = (event.target as HTMLInputElement)!.value
+    }else {
+        arrCells.value[rowActive.value][colActive.value].mathExp = ""
+    }
+
 }
 const onNextCell = (cell: Cell) => {
     if (rowActive.value + 1 < props.rows) {
@@ -213,6 +253,7 @@ const onNextCell = (cell: Cell) => {
         focusOnCell()
         defaultSelectValue();
     }
+    parseExpression(cell);
 }
 const onKeypress = (cell: Cell) => {
     cell.active = false;
@@ -225,6 +266,7 @@ const onKeypress = (cell: Cell) => {
     };
     focusOnCell();
     defaultSelectValue();
+    parseExpression(cell);
 }
 const onUpCell = (cell: Cell) => {
     if (rowActive.value > 0) {
@@ -562,7 +604,7 @@ const duplicateSelectCells = (e:Event) =>{
         let col = 0;
         let isStartDuplicate = false;
 
-        let lastValue: number, startValue: number, step: number;
+        let lastValue: number, step: number;
         // if ((Number(selectedCellsValue[0][0]) ?? Number(selectedCellsValue[0][1])) && startRow === endRow && endCol - startCol === 1) {
         //     lastValue = Number(selectedCellsValue[0][1]);
         //     step = Number(selectedCellsValue[0][1]) - Number(selectedCellsValue[0][0]);
@@ -621,35 +663,34 @@ const duplicateSelectCells = (e:Event) =>{
 
 <style lang="scss" scoped>
 .header {
-  display: flex;
-  margin: 10px 0 10px 10px;
-  align-items: stretch;
+    display: flex;
+    margin: 10px 0 10px 10px;
+    align-items: stretch;
 
-  .cellName {
-    width: 5%;
-    border: 1px solid #ccc;
-    border-bottom-left-radius: 10px;
-    border-top-left-radius: 10px;
-    padding: 5px 10px;
-    text-align: center;
-  }
-
-  .input {
-    width: 96%;
-
-    input {
-      height: 100%;
-      width: 98%;
-      font-size: 1em;
-      border-bottom-right-radius: 10px;
-      border-top-right-radius: 10px;
-      border: 1px solid #ccc;
-      padding: 5px 10px;
-      outline: none;
+    .cellName {
+        width: 5%;
+        border: 1px solid #ccc;
+        border-bottom-left-radius: 10px;
+        border-top-left-radius: 10px;
+        padding: 5px 10px;
+        text-align: center;
     }
-  }
-}
 
+    .input {
+        width: 96%;
+
+        input {
+            height: 100%;
+            width: 98%;
+            font-size: 1em;
+            border-bottom-right-radius: 10px;
+            border-top-right-radius: 10px;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            outline: none;
+        }
+    }
+}
 .table-wrapper {
   width: 98vw;
   height: 90vh;
