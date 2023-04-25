@@ -1,62 +1,63 @@
 <template>
-<!--    <table-header :arr-cells="arrCells" :header-letter="headerLetter" :col-active="colActive" :row-active="rowActive" />-->
-    <div class="header">
-        <div class="cellName">{{ headerLetter[colActive].name }}{{ rowActive + 1 }}</div>
-        <div class="input">
+  <!--    <table-header :arr-cells="arrCells" :header-letter="headerLetter" :col-active="colActive" :row-active="rowActive" />-->
+    <div class="header flex items-stretch my-2.5">
+        <div class="cellName px-2.5 py-1.5 text-center rounded-s-lg border border-gray-300">
+            {{ headerLetter[colActive].name }}{{ rowActive + 1 }}
+        </div>
+        <div class="input rounded-e-lg w-full">
             <input
-                type="text"
-                name=""
-                id=""
-                :value="arrCells[rowActive][colActive].mathExp ? arrCells[rowActive][colActive].mathExp : arrCells[rowActive][colActive].content"
-                @input="changeInput"
-                @keyup.enter="onNextCell(arrCells[rowActive][colActive])"
+                    type="text"
+                    class="rounded-e-lg border border-gray-300 px-2.5 py-1.5 text-base outline-none h-full w-full"
+                    :value="arrCells[rowActive][colActive].mathExp ? arrCells[rowActive][colActive].mathExp : arrCells[rowActive][colActive].content"
+                    @input="changeInput"
+                    @keyup.enter="onNextCell(arrCells[rowActive][colActive])"
             />
         </div>
     </div>
-    <div class="table-wrapper">
+    <div class="table-wrapper overflow-scroll select-none border border-gray-300">
         <table class="table">
             <tr>
                 <th></th>
                 <th
-                    v-for="(col, i) in cols"
-                    :key="i"
-                    :class="{ 'col-active': i === colActive }"
-                    :style="{width: tHead[i]?.width + 'px', maxWidth: tHead[i]?.width + 'px',}"
+                        v-for="(col, i) in cols"
+                        :key="i"
+                        :class="{ 'col-active': i === colActive }"
+                        :style="{width: tHead[i]?.width + 'px', maxWidth: tHead[i]?.width + 'px',}"
                 >
                     {{ tHead[i]?.name }}
-                    <span class="col-resize" @mousedown="colResize(i, $event)"></span>
+                    <span class="col-resize w-2 h-full absolute -right-1 z-10 cursor-col-resize" @mousedown="colResize(i, $event)"></span>
                 </th>
             </tr>
             <tr v-for="(row, rowInd) in arrCells" :key="rowInd" ref="refRows">
                 <td :class="{ 'row-active': rowInd === rowActive }" :style="{ height: rowsHeight[rowInd] + 'px' }"
                 >
                     {{ rowInd + 1 }}
-                    <span class="row-resize" @mousedown="rowResize(rowInd, $event)"></span>
+                    <span class="row-resize w-full h-1 absolute left-0 -bottom-1 z-10 cursor-row-resize" @mousedown="rowResize(rowInd, $event)"></span>
                 </td>
                 <td
-                    v-for="(col, colInd) in arrCells[rowInd]"
-                    :key="colInd"
-                    :class="{ active: col.active, selected: col.selected, selectionDark : isSelected(rowInd,colInd) }"
-                    @mousedown="activeCell(col, $event)"
-                    @mouseover="isStartOver && onMouseOver(rowInd,colInd)"
-                    @mouseup="onMouseUp"
-                    @keypress.enter.prevent="onNextCell(col)"
-                    @keyup.down.prevent="onNextCell(col)"
-                    @keyup.up.prevent="onUpCell(col)"
-                    @keyup.left.prevent="onLeftCell(col)"
-                    @keyup.right.prevent="onRightCell(col)"
+                        v-for="(col, colInd) in arrCells[rowInd]"
+                        :key="colInd"
+                        :class="{ active: col.active, selected: col.selected, selectionDark : isSelected(rowInd,colInd) }"
+                        @mousedown="activeCell(col, $event)"
+                        @mouseover="isStartOver && onMouseOver(rowInd,colInd)"
+                        @mouseup="onMouseUp"
+                        @keypress.enter.prevent="onNextCell(col)"
+                        @keyup.down.prevent="onNextCell(col)"
+                        @keyup.up.prevent="onUpCell(col)"
+                        @keyup.left.prevent="onLeftCell(col)"
+                        @keyup.right.prevent="onRightCell(col)"
                 >
                     <div
-                        class="cell-content"
-                        :contenteditable="col.editable"
-                        @input="col.content =($event.target as HTMLElement).textContent ?? '' "
+                            class="cell-content outline-none w-full h-full"
+                            :contenteditable="col.editable && !col.mathExp"
+                            @input="col.content =($event.target as HTMLElement).textContent ?? '' "
                     >
                         {{ col.content }}
                     </div>
                     <span
-                        class="select-cells"
-                        @mousedown="duplicateContent"
-                        v-if="rowActive === rowInd && colActive === colInd && !duplicateSelection"
+                            class="select-cells"
+                            @mousedown="duplicateContent"
+                            v-if="rowActive === rowInd && colActive === colInd && !duplicateSelection"
                     ></span>
                     <span class="duplicate-selection"
                           v-if="duplicateSelection && rowInd === bottomRightCell[0] && colInd === bottomRightCell[1]"
@@ -87,7 +88,7 @@ interface Cell {
     width: number,
     row: number,
     col: number,
-    mathExp:string,
+    mathExp: string,
 }
 
 interface Selection {
@@ -142,7 +143,7 @@ const onCreated = () => {
                 active: false,
                 selected: false,
                 editable: false,
-                selectCell : false,
+                selectCell: false,
                 width: 100,
                 row: i,
                 col: j,
@@ -172,7 +173,7 @@ const headerLetter = computed(() => {
     }
     return tHead.value;
 })
-const duplicateSelection = computed(()=>{
+const duplicateSelection = computed(() => {
     return !(selection.startRow === selection.endRow && selection.startCol === selection.endCol);
     // return rowActive.value !=== selection.endRow || colActive.value !=== selection.endCol
 });
@@ -197,7 +198,7 @@ const activeCell = (cell: Cell, e: Event) => {
     selection.startCol = cell.col;
     selection.endCol = cell.col;
     isStartOver.value = true;
-    bottomRightCell=[cell.row,cell.col]
+    bottomRightCell = [cell.row, cell.col]
     const focusOnCell = async () => {
         await nextTick();
         (e.target as HTMLElement).focus();
@@ -210,7 +211,7 @@ const parseExpression = (cell: Cell) => {
     function parse(str: string) {
         try {
             return Function(`'use strict'; return (${str})`)()
-        }catch (e){
+        } catch (e) {
             return NaN;
         }
     }
@@ -226,21 +227,21 @@ const parseExpression = (cell: Cell) => {
     oldCellPosition.col = cell.col;
 
 }
-const changeContent = (col:Cell,event:Event)=>{
+const changeContent = (col: Cell, event: Event) => {
     col.content = (event.target as HTMLElement).textContent ?? ''
-    if (col.content !== "="){
+    if (col.content !== "=") {
         col.mathExp = col.content
     }
 }
-const changeInput = (event:Event) => {
-
-    arrCells.value[rowActive.value][colActive.value].content = (event.target as HTMLInputElement)!.value
-    if (arrCells.value[rowActive.value][colActive.value].mathExp[0] === "="){
-        arrCells.value[rowActive.value][colActive.value].mathExp = (event.target as HTMLInputElement)!.value
-    }else {
+const changeInput = (event: Event) => {
+    console.log(arrCells.value[rowActive.value][colActive.value].mathExp)
+    const input = event.target as HTMLInputElement
+    arrCells.value[rowActive.value][colActive.value].content = input!.value
+    if (input.value[0] === "=") {
+        arrCells.value[rowActive.value][colActive.value].mathExp = input!.value
+    } else {
         arrCells.value[rowActive.value][colActive.value].mathExp = ""
     }
-
 }
 const onNextCell = (cell: Cell) => {
     if (rowActive.value + 1 < props.rows) {
@@ -448,21 +449,21 @@ const onMouseOver = (rowInd: number, colInd: number) => {
     }
     selection.endRow = rowInd;
     selection.endCol = colInd;
-    bottomRightCell = [rowInd,colInd];
-    if(selection.endCol < selection.startCol){
-        bottomRightCell[1]= selection.startCol
+    bottomRightCell = [rowInd, colInd];
+    if (selection.endCol < selection.startCol) {
+        bottomRightCell[1] = selection.startCol
     }
-    if (selection.endRow < selection.startRow){
-        bottomRightCell[0]= selection.startRow
+    if (selection.endRow < selection.startRow) {
+        bottomRightCell[0] = selection.startRow
     }
 }
-let selectedCellsValue:string[][] = [];
+let selectedCellsValue: string[][] = [];
 const onMouseUp = () => {
     isStartOver.value = false;
     selectedCellsValue = [];
     let iteration = 0;
     for (let row = startRow; row <= endRow; row++) {
-            selectedCellsValue[iteration] = [];
+        selectedCellsValue[iteration] = [];
         for (let col = startCol; col <= endCol; col++) {
             selectedCellsValue[iteration].push(arrCells.value[row][col].content)
         }
@@ -489,7 +490,7 @@ const isSelected = (rowInd: number, colInd: number) => {
 
 let duplicateSelectMove = false;
 
-const duplicateSelectCells = (e:Event) =>{
+const duplicateSelectCells = (e: Event) => {
     e.stopPropagation();
     duplicateSelectMove = true;
 
@@ -510,14 +511,14 @@ const duplicateSelectCells = (e:Event) =>{
             // Cursor horizontal movement
             if (absSelectedCellsX >= absSelectedCellsY) {
                 arrCells.value.forEach((row) => {
-                    for (let col = startCol; col <= endCol; col++){
+                    for (let col = startCol; col <= endCol; col++) {
                         if (row[col].selected) {
                             row[col].selected = false;
                         }
                     }
                 });
                 // If move to the right
-                if (bottomRightCell[1] + i < props.cols && bottomRightCell[1] + i > 0){
+                if (bottomRightCell[1] + i < props.cols && bottomRightCell[1] + i > 0) {
 
                     if (selectedCellsX > 0) {
                         if (selectedCellsX - tHead.value[bottomRightCell[1] + i].width > 0) {
@@ -554,11 +555,11 @@ const duplicateSelectCells = (e:Event) =>{
                 }
                 // Cursor vertical movement
             } else {
-                    for (let row = startRow; row <= endRow; row++){
-                       arrCells.value[row].find((cell)=>{
-                           cell.selected = false;
-                       })
-                    }
+                for (let row = startRow; row <= endRow; row++) {
+                    arrCells.value[row].find((cell) => {
+                        cell.selected = false;
+                    })
+                }
                 if (bottomRightCell[0] + i < props.rows && bottomRightCell[0] + i > 0) {
                     // If move to the up
                     if (selectedCellsY < 0) {
@@ -612,20 +613,20 @@ const duplicateSelectCells = (e:Event) =>{
         //     lastValue = Number(selectedCellsValue[0][1]);
         //     step = Number(selectedCellsValue[0][1]) - Number(selectedCellsValue[0][0]);
         // }
-        if (endCol - startCol <= 1 && endRow - startRow <= 1){
-            let numericalSeries:string[] = [];
-            selectedCellsValue.forEach(i=>{
-                i.forEach(j=>{
+        if (endCol - startCol <= 1 && endRow - startRow <= 1) {
+            let numericalSeries: string[] = [];
+            selectedCellsValue.forEach(i => {
+                i.forEach(j => {
                     numericalSeries.push(j);
                 })
             })
             lastValue = Number(numericalSeries[1])
             step = lastValue - Number(numericalSeries[0]);
         }
-        arrCells.value.forEach((row,rowIndex) => {
+        arrCells.value.forEach((row, rowIndex) => {
             r = isStartDuplicate ? r + 1 : 0;
             col = 0;
-            row.forEach((cell,colIndex)=>{
+            row.forEach((cell, colIndex) => {
                 if (cell.selected) {
                     if (endCol - startCol + 1 <= col) {
                         col = 0
@@ -666,41 +667,9 @@ const duplicateSelectCells = (e:Event) =>{
 
 <style lang="scss" scoped>
 .header {
-    display: flex;
-    margin: 10px 0 10px 10px;
-    align-items: stretch;
-
-    .cellName {
-        width: 5%;
-        border: 1px solid #ccc;
-        border-bottom-left-radius: 10px;
-        border-top-left-radius: 10px;
-        padding: 5px 10px;
-        text-align: center;
-    }
-
-    .input {
-        width: 96%;
-
-        input {
-            height: 100%;
-            width: 98%;
-            font-size: 1em;
-            border-bottom-right-radius: 10px;
-            border-top-right-radius: 10px;
-            border: 1px solid #ccc;
-            padding: 5px 10px;
-            outline: none;
-        }
-    }
-}
-.table-wrapper {
-  width: 98vw;
-  height: 90vh;
-  overflow: scroll;
-  // border: 1px solid;
-  margin: 10px;
-  user-select: none;
+  .cellName {
+    width: 5%;
+  }
 }
 
 table {
@@ -721,21 +690,13 @@ table {
       width: 100px;
       position: relative;
       cursor: s-resize;
-
-      .col-resize {
-        width: 7px;
-        height: 100%;
-        position: absolute;
-        right: -4px;
-        z-index: 1;
-        cursor: col-resize;
-      }
     }
 
     td {
       outline: none;
       position: relative;
       padding: 0;
+
       &.selectionDark {
         background-color: rgba(0, 0, 0, 0.1);
       }
@@ -747,60 +708,36 @@ table {
 
       &.selected {
         outline: 2px solid #007e00a5;
-        //  div:first-child{
-        //      box-sizing: border-box;
-        //      border-bottom: 2px solid #007e00a5;
-        //      border-top: 2px solid #007e00a5;
-        //      border-left: 1px solid #007e00a5;
-        //      border-right: 1px solid #007e00a5;
-        //  }
       }
-
-      //   vertical-align: bottom;
       &:first-child {
         position: relative;
         cursor: e-resize;
 
-        .row-resize {
-          width: 100%;
-          height: 6px;
-          position: absolute;
-          left: 0;
-          bottom: -3px;
-          z-index: 1;
-          cursor: row-resize;
-        }
       }
 
-      .cell-content {
-        outline: none;
-        width: 100%;
-        height: 100%;
+      .select-cells {
+        position: absolute;
+        z-index: 2;
+        right: -5px;
+        bottom: -5px;
+        width: 7px;
+        height: 7px;
+        border: 1px solid #fff;
+        background-color: #008200;
+        cursor: crosshair;
       }
 
-        .select-cells {
-            position: absolute;
-            z-index: 2;
-            right: -5px;
-            bottom: -5px;
-            width: 7px;
-            height: 7px;
-            border: 1px solid #fff;
-            background-color: #008200;
-            cursor: crosshair;
-        }
-
-        .duplicate-selection {
-            position: absolute;
-            z-index: 2;
-            right: -5px;
-            bottom: -5px;
-            width: 7px;
-            height: 7px;
-            border: 1px solid #fff;
-            background-color: #000;
-            cursor: crosshair;
-        }
+      .duplicate-selection {
+        position: absolute;
+        z-index: 2;
+        right: -5px;
+        bottom: -5px;
+        width: 7px;
+        height: 7px;
+        border: 1px solid #fff;
+        background-color: #000;
+        cursor: crosshair;
+      }
     }
   }
 
